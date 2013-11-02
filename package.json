@@ -1,0 +1,25 @@
+{
+  "name": "wikiwazup",
+  "version": "0.0.0",
+  "description": "Whats going on in the world, through wikipedia edits watching",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Flolagale/wikiwazup.git"
+  },
+  "keywords": [
+    "wikipedia",
+    "stream",
+    "news",
+    "notification"
+  ],
+  "author": "Florent Galland",
+  "license": "Affero GPL",
+  "dependencies": {
+    "wikichanges": "~0.1.2",
+    "request": "~2.27.0"
+  }
+}
