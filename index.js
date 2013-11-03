@@ -1,10 +1,14 @@
+'use strict';
+
 var request = require('request');
 var wikichanges = require('wikichanges');
+var changesManager = require('./changesManager.js');
+var util = require('util');
 
-/* In memory db containing the last changes. */
-var changes = {};
 
-var w = new wikichanges.WikiChanges({ircNickname: 'wikiwazup'});
+var w = new wikichanges.WikiChanges({
+    ircNickname: 'wikiwazup'
+});
 
 w.listen(function (change) {
     if (!change.robot && change.namespace === 'Article') {
@@ -17,31 +21,30 @@ w.listen(function (change) {
         request('http://www.wikidata.org/w/api.php?action=wbgetentities&sites=' +
             wiki + '&titles=' + title + '&props=labels&format=json',
             function (err, response, body) {
-                if (err) throw err;
+                if (err) {
+                    return util.log(err.stack ? err.stack : util.inspect(err));
+                } else if (response.statusCode !== 200) {
+                    return util.log(new Error('Wikidata request failed.\n' +
+                        util.inspect(response)));
+                }
 
                 var data = JSON.parse(body).entities;
 
                 /* Pretty print. */
-                console.log(JSON.stringify(data, undefined, 2));
+                // console.log(JSON.stringify(data, undefined, 2));
 
                 for (var entity in data) {
-                    if (data.hasOwnProperty(entity)) {
-                        if (!changes[entity]) {
-                            changes[entity] = {
-                                lastModificationTime: timestamp,
-                                modifications: []
-                            };
-                        }
-
-                        changes[entity].modifications.push({
-                            wikipediaShort: change.wikipediaShort,
-                            title: title,
-                            diffUrl: change.url
-                        });
+                    if (entity !== '-1' && data.hasOwnProperty(entity)) {
+                        changesManager.addChange(entity, change.wikipediaShort,
+                            timestamp, change.url, title);
                     }
                 }
 
-                console.log(JSON.stringify(changes, undefined, 2));
+                // console.log(JSON.stringify(changesManager, undefined, 2));
             });
     }
+});
+
+changesManager.on('interestingChange', function (articleId) {
+    util.log(changesManager.changes[articleId]);
 });
