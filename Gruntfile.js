@@ -14,7 +14,8 @@ module.exports = function (grunt) {
         jsfiles: [
             'Gruntfile.js',
             'index.js',
-            'changesManager.js'
+            'changesManager.js',
+            'test/**/*.js'
         ],
 
         jsbeautifier: {
@@ -29,6 +30,15 @@ module.exports = function (grunt) {
             files: ['<%= jsfiles %>']
         },
 
+        mochaTest: {
+            test: {
+                options: {
+                    reporter: 'spec'
+                },
+                src: ['test/**/*Spec.js']
+            }
+        },
+
         watch: {
             files: ['<%= jshint.files %>'],
             tasks: ['jsbeautifier', 'jshint']
@@ -38,7 +48,9 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-jsbeautifier');
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-contrib-watch');
+    grunt.loadNpmTasks('grunt-mocha-test');
 
-    grunt.registerTask('default', ['jsbeautifier', 'jshint']);
+    grunt.registerTask('default', ['jsbeautifier', 'jshint', 'mochaTest']);
+    grunt.registerTask('test', 'mochaTest');
 
 };

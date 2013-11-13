@@ -15,7 +15,17 @@ var ChangesManager = function () {
     this.changes = {};
 
     setInterval(this.removeOldChanges, 60 * 1000);
-    setInterval(this.checkForInterestingChanges, 10 * 1000);
+    setInterval(this.checkForInterestingChanges, 60 * 1000);
+
+    /* For debug only. */
+    var _this = this;
+    setInterval(function () {
+        require('fs').writeFile('dump.json', JSON.stringify(_this.changes, undefined, 2),
+            function (err) {
+                if (err) util.log(err);
+                util.log('Changes dumped.');
+            });
+    }, 60 * 1000);
 };
 util.inherits(ChangesManager, EventEmitter);
 
@@ -43,14 +53,21 @@ ChangesManager.prototype.addChange = function (articleId, wikipediaShort, timest
     });
 };
 
+ChangesManager.prototype.removeChange = function (articleId) {
+    delete this.changes[articleId];
+};
+
+ChangesManager.prototype.getChangeCount = function () {
+    return Object.keys(this.changes).length;
+};
+
 ChangesManager.prototype.removeOldChanges = function () {
     util.log('Removing old changes.');
     var removedCount = 0;
-    var timeDelta = 15 * 60 * 1000; /* 15min in milisecond. */
-    var timestamp = Date.now();
+    var limitTimestamp = Date.now() - (15 * 60 * 1000); /* 15min in milisecond. */
     for (var id in this.changes) {
         if (this.changes.hasOwnProperty(id)) {
-            if (timestamp - this.changes[id].lastModificationTime > timeDelta) {
+            if (this.changes[id].lastModificationTime < limitTimestamp) {
                 delete this.changes[id];
                 ++removedCount;
             }
@@ -62,13 +79,17 @@ ChangesManager.prototype.removeOldChanges = function () {
 
 ChangesManager.prototype.checkForInterestingChanges = function () {
     util.log('Check for interesting changes.');
+    var hasInterestingChange = false;
     for (var id in this.changes) {
         if (this.changes.hasOwnProperty(id)) {
             if (this.changes[id].modifications.length > 2) {
                 this.emit('interestingChange', id);
+                hasInterestingChange = true;
             }
         }
     }
+
+    return hasInterestingChange;
 };
 
 var changesManager = new ChangesManager();
