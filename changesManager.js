@@ -22,7 +22,7 @@ var ChangesManager = function () {
     setInterval(function () {
         require('fs').writeFile('dump.json', JSON.stringify(_this.changes, undefined, 2),
             function (err) {
-                if (err) util.log(err);
+                if (err) return util.log(err);
                 util.log('Changes dumped.');
             });
     }, 60 * 1000);
