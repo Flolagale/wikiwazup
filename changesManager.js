@@ -14,11 +14,20 @@ var ChangesManager = function () {
 
     this.changes = {};
 
-    setInterval(this.removeOldChanges, 60 * 1000);
-    setInterval(this.checkForInterestingChanges, 60 * 1000);
+    var _this = this;
+    setInterval(function() {
+        _this.removeOldChanges();
+    }, 60 * 1000);
+
+    setInterval(function () {
+        _this.checkForInterestingChanges();
+    }, 60 * 1000);
+
+    setInterval(function() {
+        util.log('Changes manager contains ' + _this.getChangeCount() + ' changes.');
+    }, 30 * 1000);
 
     /* For debug only. */
-    var _this = this;
     setInterval(function () {
         require('fs').writeFile('dump.json', JSON.stringify(_this.changes, undefined, 2),
             function (err) {

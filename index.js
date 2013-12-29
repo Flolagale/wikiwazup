@@ -12,7 +12,7 @@ var w = new wikichanges.WikiChanges({
 
 w.listen(function (change) {
     if (!change.robot && change.namespace === 'Article') {
-        console.log(change);
+        // console.log(change);
 
         /* Get wikidata entry. */
         var title = change.page.replace(/\s/g, '_');
@@ -46,6 +46,7 @@ w.listen(function (change) {
 });
 
 changesManager.on('interestingChange', function (articleId) {
+    util.log('Found interesting change:');
     util.log(changesManager.changes[articleId]);
     require('fs').writeFile(articleId, JSON.stringify(changesManager.changes[articleId], undefined, 2), function () {});
 });
