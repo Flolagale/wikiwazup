@@ -14,6 +14,10 @@ var ChangesManager = function () {
 
     this.changes = {};
 
+    /* Lifetime of a change. During that period of time, it will be checked for
+     * being sgnificant. After that period of time, the change will be deleted. */
+    this.changeLifetime = 15 * 60 * 1000; /* 15min in milisecond. */
+
     var _this = this;
     setInterval(function() {
         _this.removeOldChanges();
@@ -73,7 +77,7 @@ ChangesManager.prototype.getChangeCount = function () {
 ChangesManager.prototype.removeOldChanges = function () {
     util.log('Removing old changes.');
     var removedCount = 0;
-    var limitTimestamp = Date.now() - (15 * 60 * 1000); /* 15min in milisecond. */
+    var limitTimestamp = Date.now() - this.changeLifetime; /* 15min in milisecond. */
     for (var id in this.changes) {
         if (this.changes.hasOwnProperty(id)) {
             if (this.changes[id].lastModificationTime < limitTimestamp) {
@@ -91,9 +95,24 @@ ChangesManager.prototype.checkForInterestingChanges = function () {
     var hasInterestingChange = false;
     for (var id in this.changes) {
         if (this.changes.hasOwnProperty(id)) {
-            if (this.changes[id].modifications.length > 2) {
-                this.emit('interestingChange', id);
-                hasInterestingChange = true;
+
+            if (this.changes[id].modifications.length >= 2) {
+                /* This article has at least two modifications (edits) in the last
+                 * this.changeLifetime minutes, now check that these changes where
+                 * made at least in two different languages by getting a set
+                 * (a list without duplicates) of the modified languages. */
+                 var modifications = this.changes[id].modifications;
+                 var languages = modifications.map(function (modif) {
+                    return modif.wikipediaShort;
+                 }).filter(function (language, index, self) {
+                     /* If it is the first occurence of language, return true. */
+                     return index === self.indexOf(language);
+                 });
+
+                 if (languages.length >= 2) {
+                    this.emit('interestingChange', id, languages);
+                    hasInterestingChange = true;
+                 }
             }
         }
     }

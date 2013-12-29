@@ -45,8 +45,9 @@ w.listen(function (change) {
     }
 });
 
-changesManager.on('interestingChange', function (articleId) {
-    util.log('Found interesting change:');
-    util.log(changesManager.changes[articleId]);
+changesManager.on('interestingChange', function (articleId, languages) {
+    util.log('Found interesting change, edited in ' + languages.length +
+    ' languages in the last ' + changesManager.changeLifetime / 60 * 1000 + ' minutes:');
+    util.log(util.inspect(changesManager.changes[articleId], {depth: 5}));
     require('fs').writeFile(articleId, JSON.stringify(changesManager.changes[articleId], undefined, 2), function () {});
 });
