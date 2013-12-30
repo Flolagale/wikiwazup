@@ -32,13 +32,13 @@ var ChangesManager = function () {
     }, 30 * 1000);
 
     /* For debug only. */
-    setInterval(function () {
+    /* setInterval(function () {
         require('fs').writeFile('dump.json', JSON.stringify(_this.changes, undefined, 2),
             function (err) {
                 if (err) return util.log(err);
                 util.log('Changes dumped.');
             });
-    }, 60 * 1000);
+    }, 60 * 1000); */
 };
 util.inherits(ChangesManager, EventEmitter);
 
@@ -47,8 +47,22 @@ util.inherits(ChangesManager, EventEmitter);
  * @param wikipediaShort the 2 letters language of the edited wikipedia.
  * @param timestamp the edit timestamp.
  * @param diffUrl where to find the edit diff.
- * @param title the title of the article in the edited language. */
-ChangesManager.prototype.addChange = function (articleId, wikipediaShort, timestamp, diffUrl, title) {
+ * @param diffDelta the count of changed characters for this edit.
+ * @param comment the edit comment.
+ * @param title the title of the article in the edited language.
+ * @param pageUrl the url of the edited page on Wikipedia. */
+ChangesManager.prototype.addChange = function (articleId, wikipediaShort,
+        timestamp, diffUrl, diffDelta, comment, title, pageUrl) {
+    /* Make here a first analysis of the edit. Save it only if it seems
+     * relevant for us. Mainly, discard typo fixing and minor changes. */
+    var minorChangeMarkerWords = ['typo', 'fix', 'clean', 'misc'];
+    var isMinorChange = minorChangeMarkerWords.some(function (markerWord) {
+        return comment.indexOf(markerWord) !== -1;
+    });
+    if (isMinorChange) {
+        return;
+    }
+
     if (!this.changes[articleId]) {
         this.changes[articleId] = {
             lastModificationTime: timestamp,
@@ -62,7 +76,10 @@ ChangesManager.prototype.addChange = function (articleId, wikipediaShort, timest
         wikipediaShort: wikipediaShort,
         timestamp: timestamp,
         diffUrl: diffUrl,
-        title: title
+        diffDelta: diffDelta,
+        comment: comment,
+        title: title,
+        pageUrl: pageUrl
     });
 };
 

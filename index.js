@@ -15,11 +15,11 @@ w.listen(function (change) {
         // console.log(change);
 
         /* Get wikidata entry. */
-        var title = change.page.replace(/\s/g, '_');
+        var titleSlug = change.page.replace(/\s/g, '_');
         var wiki = change.wikipediaShort + 'wiki';
         var timestamp = Date.now();
         request('http://www.wikidata.org/w/api.php?action=wbgetentities&sites=' +
-            wiki + '&titles=' + title + '&props=labels&format=json',
+            wiki + '&titles=' + titleSlug + '&props=labels&format=json',
             function (err, response, body) {
                 if (err) {
                     return util.log(err.stack ? err.stack : util.inspect(err));
@@ -36,7 +36,8 @@ w.listen(function (change) {
                 for (var entity in data) {
                     if (entity !== '-1' && data.hasOwnProperty(entity)) {
                         changesManager.addChange(entity, change.wikipediaShort,
-                            timestamp, change.url, title);
+                            timestamp, change.url, change.delta, change.comment,
+                            change.page, change.pageUrl);
                     }
                 }
 
@@ -49,5 +50,4 @@ changesManager.on('interestingChange', function (articleId, languages) {
     util.log('Found interesting change, edited in ' + languages.length +
     ' languages in the last ' + changesManager.changeLifetime / 60 * 1000 + ' minutes:');
     util.log(util.inspect(changesManager.changes[articleId], {depth: 5}));
-    require('fs').writeFile(articleId, JSON.stringify(changesManager.changes[articleId], undefined, 2), function () {});
 });
