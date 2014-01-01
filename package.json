@@ -21,7 +21,8 @@
   "license": "Affero GPL",
   "dependencies": {
     "wikichanges": "~0.1.2",
-    "request": "~2.27.0"
+    "request": "~2.27.0",
+    "twit": "~1.1.11"
   },
   "devDependencies": {
     "grunt": "~0.4.1",

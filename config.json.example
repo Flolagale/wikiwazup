@@ -1,0 +1,7 @@
+{
+    "useTwitterBroadcasting": false,
+    "consumer_key": "something_secret",
+    "consumer_secret": "something_very_secret",
+    "access_token": "an_access_token",
+    "access_token_secret": "a_token_secret"
+}

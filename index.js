@@ -1,10 +1,23 @@
 'use strict';
 
-var request = require('request');
-var wikichanges = require('wikichanges');
 var changesManager = require('./changesManager.js');
+var fs = require('fs');
+var request = require('request');
+var Twit = require('twit');
 var util = require('util');
+var wikichanges = require('wikichanges');
 
+
+/* Set up twitter broadcasting if necessary. */
+var config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+if (config.useTwitterBroadcasting) {
+    var twit = new Twit({
+        consumer_key: config.consumer_key,
+        consumer_secret: config.consumer_secret,
+        access_token: config.access_token,
+        access_token_secret: config.access_token_secret
+    });
+}
 
 var w = new wikichanges.WikiChanges({
     ircNickname: 'wikiwazup'
@@ -50,4 +63,18 @@ changesManager.on('interestingChange', function (articleId, languages) {
     util.log('Found interesting change, edited in ' + languages.length +
     ' languages in the last ' + changesManager.changeLifetime / 60 * 1000 + ' minutes:');
     util.log(util.inspect(changesManager.changes[articleId], {depth: 5}));
+
+    /* Tweet if necessary. */
+    if (config.useTwitterBroadcasting) {
+        var modification = changesManager.changes[articleId].modifications[0];
+        var status = modification.title + ': ' + modification.comment + ' ' +
+            modification.pageUrl + '. Diff: ' + modification.diffUrl;
+        util.log('Tweeting:\n' + status);
+        twit.post('statuses/update', {
+            status: status
+        }, function (err, reply) {
+            if (err) return util.log(err.stack);
+            util.log('Twitter reply:\n' + util.inspect(reply, {depth: 5}));
+        });
+    }
 });
