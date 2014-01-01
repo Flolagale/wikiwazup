@@ -59,14 +59,21 @@ w.listen(function (change) {
     }
 });
 
-changesManager.on('interestingChange', function (articleId, languages) {
+changesManager.on('interestingChange', function (modifications) {
+    var languages = modifications.getEditedLanguages();
     util.log('Found interesting change, edited in ' + languages.length +
-    ' languages in the last ' + changesManager.changeLifetime / 60 * 1000 + ' minutes:');
-    util.log(util.inspect(changesManager.changes[articleId], {depth: 5}));
+        ' languages in the last ' + changesManager.changeLifetime / (60 * 1000) + ' minutes:');
+    util.log(util.inspect(modifications, {
+        depth: 5
+    }));
 
     /* Tweet if necessary. */
     if (config.useTwitterBroadcasting) {
-        var modification = changesManager.changes[articleId].modifications[0];
+        /* Try to get an english inter-wiki modification, if it is not
+         * possible, simply get the first modification there is. */
+        var modification = modifications.getLastEnglishModificationIfAny();
+        modification = modification || modifications[0];
+
         var status = modification.title + ': ' + modification.comment + ' ' +
             modification.pageUrl + '. Diff: ' + modification.diffUrl;
         util.log('Tweeting:\n' + status);
@@ -74,7 +81,9 @@ changesManager.on('interestingChange', function (articleId, languages) {
             status: status
         }, function (err, reply) {
             if (err) return util.log(err.stack);
-            util.log('Twitter reply:\n' + util.inspect(reply, {depth: 5}));
+            util.log('Twitter reply:\n' + util.inspect(reply, {
+                depth: 5
+            }));
         });
     }
 });
