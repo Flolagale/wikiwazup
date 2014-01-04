@@ -69,21 +69,19 @@ changesManager.on('interestingChange', function (modifications) {
 
     /* Tweet if necessary. */
     if (config.useTwitterBroadcasting) {
-        /* Try to get an english inter-wiki modification, if it is not
-         * possible, simply get the first modification there is. */
-        var modification = modifications.getLastEnglishModificationIfAny();
-        modification = modification || modifications[0];
+        /* Try to get an english inter-wiki modification. */
+        var modification = modifications.getMostAccessibleModification();
 
         var status = modification.title + ': ' + modification.comment + ' ' +
             modification.pageUrl + '. Diff: ' + modification.diffUrl;
         util.log('Tweeting:\n' + status);
         twit.post('statuses/update', {
             status: status
-        }, function (err, reply) {
+        }, function (err /*, reply */ ) {
             if (err) return util.log(err.stack);
-            util.log('Twitter reply:\n' + util.inspect(reply, {
-                depth: 5
-            }));
+            // util.log('Twitter reply:\n' + util.inspect(reply, {
+            // depth: 5
+            // }));
         });
     }
 });

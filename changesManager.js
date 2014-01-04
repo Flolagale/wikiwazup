@@ -62,24 +62,41 @@ ModificationCollection.prototype.getEditedLanguages = function () {
 /** Get the last english inter-wiki modification if any, return null if none
  * found. */
 ModificationCollection.prototype.getLastEnglishModificationIfAny = function () {
-    var englishModifications = this.filter(function (modif) {
-        return modif.wikipediaShort === 'en';
+    return this._getLastModificationIfAny('en');
+};
+
+ModificationCollection.prototype._getLastModificationIfAny = function (language) {
+    var modifications = this.filter(function (modif) {
+        return modif.wikipediaShort === language;
     });
 
-    if (englishModifications.length === 0) {
+    if (modifications.length === 0) {
         return null;
     }
 
     var lastTimestamp = 0;
     var lastModifIndex = 0;
-    englishModifications.forEach(function (modif, index) {
+    modifications.forEach(function (modif, index) {
         if (modif.timestamp > lastTimestamp) {
             lastTimestamp = modif.timestamp;
             lastModifIndex = index;
         }
     });
 
-    return englishModifications[lastModifIndex];
+    return modifications[lastModifIndex];
+};
+
+ModificationCollection.prototype.getMostAccessibleModification = function () {
+    if (this.length === 0) {
+        return null;
+    }
+
+    /* Try english, then french then spanish the whatever. */
+    var mostAccessibleModification = this.getLastEnglishModificationIfAny() ||
+        this._getLastModificationIfAny('fr') ||
+        this._getLastModificationIfAny('es') ||
+        this[0];
+    return mostAccessibleModification;
 };
 
 /** ChangesManager allows to manage the wikipedia recent changes or edits. It
