@@ -34,7 +34,7 @@ Modification.prototype.isMinorModification = function () {
     var _this = this;
     var minorModificationMarkerWords = ['typo', 'fix', 'clean', 'misc', 'map', '+', 'picture'];
     var isMinorModification = minorModificationMarkerWords.some(function (markerWord) {
-        return _this.comment.indexOf(markerWord) !== -1;
+        return _this.comment.toLowerCase().indexOf(markerWord) !== -1;
     });
 
     var minimalModificationLength = 3;
@@ -59,13 +59,13 @@ ModificationCollection.prototype.getEditedLanguages = function () {
     });
 };
 
-/** Get the last english inter-wiki modification if any, return null if none
+/** Get the first english inter-wiki modification if any, return null if none
  * found. */
-ModificationCollection.prototype.getLastEnglishModificationIfAny = function () {
-    return this._getLastModificationIfAny('en');
+ModificationCollection.prototype.getFirstEnglishModificationIfAny = function () {
+    return this._getFirstModificationIfAny('en');
 };
 
-ModificationCollection.prototype._getLastModificationIfAny = function (language) {
+ModificationCollection.prototype._getFirstModificationIfAny = function (language) {
     var modifications = this.filter(function (modif) {
         return modif.wikipediaShort === language;
     });
@@ -74,16 +74,16 @@ ModificationCollection.prototype._getLastModificationIfAny = function (language)
         return null;
     }
 
-    var lastTimestamp = 0;
-    var lastModifIndex = 0;
+    var firstTimestamp = 0;
+    var firstModifIndex = 0;
     modifications.forEach(function (modif, index) {
-        if (modif.timestamp > lastTimestamp) {
-            lastTimestamp = modif.timestamp;
-            lastModifIndex = index;
+        if (modif.timestamp < firstTimestamp) {
+            firstTimestamp = modif.timestamp;
+            firstModifIndex = index;
         }
     });
 
-    return modifications[lastModifIndex];
+    return modifications[firstModifIndex];
 };
 
 ModificationCollection.prototype.getMostAccessibleModification = function () {
@@ -92,18 +92,26 @@ ModificationCollection.prototype.getMostAccessibleModification = function () {
     }
 
     /* Try english, then french then spanish the whatever. */
-    var mostAccessibleModification = this.getLastEnglishModificationIfAny() ||
-        this._getLastModificationIfAny('fr') ||
-        this._getLastModificationIfAny('es') ||
+    var mostAccessibleModification = this.getFirstEnglishModificationIfAny() ||
+        this._getFirstModificationIfAny('fr') ||
+        this._getFirstModificationIfAny('es') ||
+        this._getFirstModificationIfAny('it') ||
+        this._getFirstModificationIfAny('de') ||
         this[0];
     return mostAccessibleModification;
+};
+
+ModificationCollection.prototype.containsMinorModification = function () {
+    return this.some(function (modification) {
+        return modification.isMinorModification();
+    });
 };
 
 /** ChangesManager allows to manage the wikipedia recent changes or edits. It
  * is an instance of EventEmitter. It checks periodically for significant
  * changes (edits that mean that something interesting happened in the world).
  * For instance, when similar edits are made to the same article in several
- * different languages in the last minutes. It also remove the least recent
+ * different languages in the first minutes. It also remove the least recent
  * changes after a while. */
 var ChangesManager = function () {
     EventEmitter.call(this);
@@ -151,11 +159,11 @@ ChangesManager.prototype.addChange = function (articleId, wikipediaShort,
     timestamp, diffUrl, diffDelta, comment, title, pageUrl) {
     if (!this.changes[articleId]) {
         this.changes[articleId] = {
-            lastModificationTime: timestamp,
+            firstModificationTime: timestamp,
             modifications: new ModificationCollection()
         };
     } else {
-        this.changes[articleId].lastModificationTime = timestamp;
+        this.changes[articleId].firstModificationTime = timestamp;
     }
 
     this.changes[articleId].modifications.push(new Modification(articleId,
@@ -182,7 +190,7 @@ ChangesManager.prototype.removeOldChanges = function () {
     var limitTimestamp = Date.now() - this.changeLifetime; /* 15min in milisecond. */
     for (var id in this.changes) {
         if (this.changes.hasOwnProperty(id)) {
-            if (this.changes[id].lastModificationTime < limitTimestamp) {
+            if (this.changes[id].firstModificationTime < limitTimestamp) {
                 delete this.changes[id];
                 ++removedCount;
             }
@@ -201,26 +209,18 @@ ChangesManager.prototype.checkForInterestingChanges = function () {
     for (var id in this.changes) {
         if (this.changes.hasOwnProperty(id)) {
             if (this.changes[id].modifications.length >= 2) {
-                /* This article has at least two modifications (edits) in the last
+                /* This article has at least two modifications (edits) in the first
                  * this.changeLifetime minutes, now check that these changes where
                  * made at least in three different languages by getting a set
-                 * (a list without duplicates) of the modified languages. */
+                 * (a list without duplicates) of the modified languages.
+                 * Verify that the ModificationCollection does not contain any
+                 * minor modification as well. */
                 var modifications = this.changes[id].modifications;
                 var languages = modifications.getEditedLanguages();
-                if (languages.length >= differentLanguageCount) {
-                    /* Try to get the english language modification if any and
-                     * analyse it to discard typo fixing and minor changes. */
-                    var isMinorChange = false;
-                    var englishModification = modifications.getLastEnglishModificationIfAny();
-                    if (englishModification !== null) {
-                        isMinorChange = englishModification.isMinorModification();
-                    }
-
-                    if (!isMinorChange) {
-                        this.emit('interestingChange', modifications);
-                        delete this.changes[id];
-                        hasInterestingChange = true;
-                    }
+                if (languages.length >= differentLanguageCount && !modifications.containsMinorModification()) {
+                    this.emit('interestingChange', modifications);
+                    delete this.changes[id];
+                    hasInterestingChange = true;
                 }
             }
         }

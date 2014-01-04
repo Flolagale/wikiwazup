@@ -46,20 +46,20 @@ describe('The changesManager', function () {
             changesManager.clear();
             var timestamp = Date.now() - 18 * 60 * 1000; // 18min ago.
             changesManager.addChange('foo18', 'en', timestamp,
-                'http://foo.bar/diff', 5, 'fix typo', 'FooBar', 'http://foo.bar');
+                'http://foo.bar/diff', 5, 'hi guys', 'FooBar', 'http://foo.bar');
 
             timestamp = Date.now() - 16 * 60 * 1000; // 16min ago.
             changesManager.addChange('foo16', 'en', timestamp,
-                'http://foo.bar/diff', 5, 'fix typo', 'FooBar', 'http://foo.bar');
+                'http://foo.bar/diff', 5, 'hi guys', 'FooBar', 'http://foo.bar');
 
             timestamp = Date.now() - 14 * 60 * 1000; // 14min ago.
             changesManager.addChange('foo14', 'en', timestamp,
-                'http://foo.bar/diff', 5, 'fix typo', 'FooBar', 'http://foo.bar');
+                'http://foo.bar/diff', 5, 'hi guys', 'FooBar', 'http://foo.bar');
 
             /* Make an interesting change, that is, an edit of the same
              * article but in another wiki/language. */
             changesManager.addChange('foo14', 'fr', timestamp,
-                'http://foo.bar/diff', 5, 'fix typo', 'FooBar', 'http://foo.bar');
+                'http://foo.bar/diff', 5, 'hi guys', 'FooBar', 'http://foo.bar');
 
             changesManager.addChange('foo14', 'es', timestamp,
                 'http://foo.bar/diff', 5, 'fix typo', 'FooBar', 'http://foo.bar');
