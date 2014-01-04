@@ -27,6 +27,20 @@ var Modification = function (articleId, wikipediaShort,
     }
 };
 
+/** Check if the Modification seems to be a minor Modification. For instance,
+ * if it is just a cleanup or a typo fixing. Will give satisfying results only
+ * for english modification for now. */
+Modification.prototype.isMinorModification = function () {
+    var _this = this;
+    var minorModificationMarkerWords = ['typo', 'fix', 'clean', 'misc'];
+    var isMinorModification = minorModificationMarkerWords.some(function (markerWord) {
+        return _this.comment.indexOf(markerWord) !== -1;
+    });
+
+    var minimalModificationLength = 3;
+    return isMinorModification || this.diffDelta <= minimalModificationLength;
+};
+
 /** A collection of Modifications with some helper methods.
  * Inherits from Array. */
 var ModificationCollection = function () {
@@ -81,20 +95,20 @@ var ChangesManager = function () {
 
     /* Lifetime of a change. During that period of time, it will be checked for
      * being sgnificant. After that period of time, the change will be deleted. */
-    this.changeLifetime = 15 * 60 * 1000; /* 15min in milisecond. */
+    this.changeLifetime = 25 * 60 * 1000; /* 25min in milisecond. */
 
     var _this = this;
     setInterval(function () {
         _this.removeOldChanges();
-    }, 60 * 1000);
+    }, 30 * 60 * 1000);
 
     setInterval(function () {
         _this.checkForInterestingChanges();
-    }, 60 * 1000);
+    }, 15 * 60 * 1000);
 
     setInterval(function () {
         util.log('Changes manager contains ' + _this.getChangeCount() + ' changes.');
-    }, 30 * 1000);
+    }, 5 * 60 * 1000);
 
     /* For debug only. */
     /* setInterval(function () {
@@ -140,6 +154,11 @@ ChangesManager.prototype.getChangeCount = function () {
     return Object.keys(this.changes).length;
 };
 
+/** Remove all the current changes. */
+ChangesManager.prototype.clear = function () {
+    this.changes = {};
+};
+
 ChangesManager.prototype.removeOldChanges = function () {
     util.log('Removing old changes.');
     var removedCount = 0;
@@ -160,6 +179,7 @@ ChangesManager.prototype.removeOldChanges = function () {
  * main part of the wikiwazup algorithm is here. */
 ChangesManager.prototype.checkForInterestingChanges = function () {
     util.log('Check for interesting changes.');
+    var differentLanguageCount = 3;
     var hasInterestingChange = false;
     for (var id in this.changes) {
         if (this.changes.hasOwnProperty(id)) {
@@ -170,16 +190,13 @@ ChangesManager.prototype.checkForInterestingChanges = function () {
                  * (a list without duplicates) of the modified languages. */
                 var modifications = this.changes[id].modifications;
                 var languages = modifications.getEditedLanguages();
-                if (languages.length >= 3) {
+                if (languages.length >= differentLanguageCount) {
                     /* Try to get the english language modification if any and
                      * analyse it to discard typo fixing and minor changes. */
                     var isMinorChange = false;
                     var englishModification = modifications.getLastEnglishModificationIfAny();
                     if (englishModification !== null) {
-                        var minorChangeMarkerWords = ['typo', 'fix', 'clean', 'misc'];
-                        isMinorChange = minorChangeMarkerWords.some(function (markerWord) {
-                            return englishModification.comment.indexOf(markerWord) !== -1;
-                        });
+                        isMinorChange = englishModification.isMinorModification();
                     }
 
                     if (!isMinorChange) {
