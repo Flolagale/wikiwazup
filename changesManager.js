@@ -32,9 +32,11 @@ var Modification = function (articleId, wikipediaShort,
  * for english modification for now. */
 Modification.prototype.isMinorModification = function () {
     var _this = this;
-    var minorModificationMarkerWords = ['typo', 'fix', 'clean', 'misc', 'map',
-        '+', 'picture', 'image', 'pic', 'link', 'lien', 'enlace', 'add',
-        'gallery', 'footnote', 'reference', 'crop', 'recadr', '{{'
+    var minorModificationMarkerWords = [
+        'typo', 'fix', 'clean', 'misc', 'map', '+', 'picture', 'image', 'pic',
+        'photo', 'link', 'lien', 'enlace', 'add', 'gallery', 'footnote',
+        'reference', 'crop', 'recadr', '{{', '[[', 'script', 'undid', 'revert',
+        'commons', 'correct'
     ];
     var isMinorModification = minorModificationMarkerWords.some(function (markerWord) {
         return _this.comment.toLowerCase().indexOf(markerWord) !== -1;
