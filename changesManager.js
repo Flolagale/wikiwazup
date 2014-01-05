@@ -36,7 +36,7 @@ Modification.prototype.isMinorModification = function () {
         'typo', 'fix', 'clean', 'misc', 'map', '+', 'picture', 'image', 'pic',
         'photo', 'jpg', 'jpeg', 'link', 'lien', 'enlace', 'add', 'gallery', 'footnote',
         'reference', 'ref', 'crop', 'recadr', '{{', '[[', 'script', 'undid', 'revert',
-        'commons', 'correct', 'copyvio', 'source', 'see also'
+        'commons', 'correct', 'copyvio', 'source', 'see also', 'illustration'
     ];
     var isMinorModification = minorModificationMarkerWords.some(function (markerWord) {
         return _this.comment.toLowerCase().indexOf(markerWord) !== -1;
